@@ -1,25 +1,43 @@
-using CollegeSchedule.Data;
 using Microsoft.EntityFrameworkCore;
+using CollegeSchedule.Data;
+using CollegeSchedule.Models; // Твоя папка с моделями
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Add services to the container.
 
+// 1. Настройка подключения к PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// 2. Настройка CORS (разрешаем мобильному приложению доступ к API)
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// 3. Стандартные сервисы API
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 4. Включаем Swagger для тестирования
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseAuthorization();
+// Включаем CORS
+app.UseCors();
 
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
